@@ -1,0 +1,1024 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hall Effect Material Classifier</title>
+  <meta name="description" content="A virtual physics lab assistant that classifies semiconductor material type (N-type or P-type) from Hall Effect multimeter readings." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --surface: #ffffff;
+      --surface-alt: #f8fafc;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-soft: #eff6ff;
+      --success: #059669;
+      --success-soft: #ecfdf5;
+      --warning: #b45309;
+      --warning-soft: #fffbeb;
+      --danger: #dc2626;
+      --danger-soft: #fef2f2;
+      --radius: 14px;
+      --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
+      --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 24px 16px 56px;
+    }
+
+    /* ---------- Header ---------- */
+    header {
+      text-align: center;
+      padding: 28px 8px 12px;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--primary);
+      background: var(--primary-soft);
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      font-size: clamp(1.6rem, 4vw, 2.5rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin: 0 0 10px;
+    }
+
+    .subtitle {
+      margin: 0 auto;
+      max-width: 620px;
+      color: var(--text-muted);
+      font-size: clamp(0.95rem, 2.2vw, 1.05rem);
+    }
+
+    /* ---------- Cards ---------- */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: clamp(18px, 4vw, 28px);
+      margin-top: 20px;
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin: 0 0 4px;
+    }
+
+    .card-desc {
+      margin: 0 0 20px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* ---------- Form ---------- */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px 20px;
+    }
+
+    .field label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.92rem;
+      margin-bottom: 6px;
+    }
+
+    .field label .symbol {
+      font-family: var(--mono);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .field label .unit {
+      color: var(--text-muted);
+      font-weight: 500;
+      font-size: 0.85rem;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      font-family: var(--mono);
+      font-size: 1.05rem;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface-alt);
+      color: var(--text);
+      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    input[type="text"]::placeholder {
+      color: #94a3b8;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: var(--surface);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+    }
+
+    input[type="text"][aria-invalid="true"] {
+      border-color: var(--danger);
+      background: var(--danger-soft);
+    }
+
+    input[type="text"][aria-invalid="true"]:focus {
+      box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.15);
+    }
+
+    .hint {
+      margin-top: 6px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .field-error {
+      margin-top: 6px;
+      font-size: 0.82rem;
+      color: var(--danger);
+      font-weight: 500;
+      display: none;
+    }
+
+    .field-error.visible {
+      display: block;
+    }
+
+    .submit-row {
+      margin-top: 24px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .btn-primary {
+      width: 100%;
+      max-width: 340px;
+      font-family: inherit;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--primary), #4f46e5);
+      border: none;
+      border-radius: 12px;
+      padding: 15px 24px;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(37, 99, 235, 0.3);
+      transition: transform 0.12s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.05);
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.35);
+    }
+
+    .btn-primary:active {
+      transform: translateY(1px) scale(0.99);
+    }
+
+    .btn-primary:focus-visible {
+      outline: 3px solid rgba(37, 99, 235, 0.4);
+      outline-offset: 3px;
+    }
+
+    /* ---------- Global error ---------- */
+    .alert {
+      display: none;
+      align-items: flex-start;
+      gap: 10px;
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      font-size: 0.92rem;
+      font-weight: 500;
+    }
+
+    .alert.visible {
+      display: flex;
+    }
+
+    .alert-error {
+      background: var(--danger-soft);
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    .alert-icon {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      margin-top: 1px;
+    }
+
+    /* ---------- Output ---------- */
+    .output {
+      display: none;
+      margin-top: 20px;
+    }
+
+    .output.visible {
+      display: block;
+      animation: fadeUp 0.35s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .result-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .classification {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: clamp(1.1rem, 3vw, 1.4rem);
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+    }
+
+    .classification.n-type {
+      color: #1e40af;
+      background: var(--primary-soft);
+      border-color: #bfdbfe;
+    }
+
+    .classification.p-type {
+      color: #9a3412;
+      background: #fff7ed;
+      border-color: #fed7aa;
+    }
+
+    .classification.intrinsic {
+      color: var(--warning);
+      background: var(--warning-soft);
+      border-color: #fde68a;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .result-tile {
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+    }
+
+    .result-tile .tile-symbol {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--primary);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .result-tile .tile-name {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .result-tile .tile-value {
+      font-family: var(--mono);
+      font-size: clamp(1.05rem, 2.6vw, 1.3rem);
+      font-weight: 600;
+      color: var(--text);
+      overflow-wrap: anywhere;
+    }
+
+    .result-tile .tile-unit {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+      font-family: var(--mono);
+    }
+
+    .result-tile sup {
+      font-size: 0.7em;
+      line-height: 0;
+    }
+
+    .explanation {
+      margin: 18px 0 0;
+      padding: 14px 16px;
+      background: var(--surface-alt);
+      border-left: 3px solid var(--primary);
+      border-radius: 6px;
+      font-size: 0.92rem;
+      color: #334155;
+    }
+
+    .output-empty {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 24px 12px;
+      font-size: 0.95rem;
+    }
+
+    /* ---------- Theory ---------- */
+    details.theory {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-top: 20px;
+      overflow: hidden;
+    }
+
+    details.theory summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 18px clamp(18px, 4vw, 28px);
+      font-weight: 700;
+      font-size: 1.02rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+
+    details.theory summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.theory summary::after {
+      content: "+";
+      font-size: 1.4rem;
+      font-weight: 400;
+      color: var(--primary);
+      line-height: 1;
+      transition: transform 0.2s ease;
+    }
+
+    details.theory[open] summary::after {
+      content: "–";
+    }
+
+    details.theory summary:focus-visible {
+      outline: 3px solid rgba(37, 99, 235, 0.35);
+      outline-offset: -3px;
+    }
+
+    .theory-body {
+      padding: 0 clamp(18px, 4vw, 28px) 24px;
+      font-size: 0.94rem;
+      color: #334155;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    .theory-body h3 {
+      font-size: 0.98rem;
+      margin: 20px 0 8px;
+      color: var(--text);
+    }
+
+    .theory-body h3:first-child {
+      margin-top: 0;
+    }
+
+    .theory-body p {
+      margin: 0 0 12px;
+    }
+
+    .formula {
+      font-family: var(--mono);
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin: 10px 0 14px;
+      font-size: 0.92rem;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .theory-body ul {
+      padding-left: 20px;
+      margin: 0 0 12px;
+    }
+
+    .theory-body li {
+      margin-bottom: 6px;
+    }
+
+    .theory-body code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 5px;
+    }
+
+    .const-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+    }
+
+    .const-table th,
+    .const-table td {
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .const-table th {
+      font-weight: 600;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .const-table td.mono {
+      font-family: var(--mono);
+    }
+
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      margin-top: 32px;
+    }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 640px) {
+      .container {
+        padding: 16px 12px 40px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .result-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .btn-primary {
+        max-width: none;
+      }
+
+      .formula {
+        font-size: 0.85rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+
+    <!-- ============ HEADER ============ -->
+    <header>
+      <span class="badge">Applied Physics Lab</span>
+      <h1>Hall Effect Material Classifier</h1>
+      <p class="subtitle">Enter your multimeter readings from a Hall Effect experiment to compute the Hall coefficient, estimate carrier concentration, and identify whether the sample is an N-type or P-type semiconductor.</p>
+    </header>
+
+    <!-- ============ INPUT SECTION ============ -->
+    <section class="card" aria-labelledby="input-title">
+      <h2 class="card-title" id="input-title">Experimental Readings</h2>
+      <p class="card-desc">Scientific notation is accepted, for example <code>1.5e-3</code> or <code>-2.4E+2</code>.</p>
+
+      <form id="hall-form" novalidate autocomplete="off">
+        <div class="form-grid">
+
+          <div class="field">
+            <label for="vh">
+              Hall Voltage <span class="symbol">(V<sub>H</sub>)</span>
+              <span class="unit">· volts (V)</span>
+            </label>
+            <div class="input-wrap">
+              <input type="text" id="vh" name="vh" inputmode="decimal" placeholder="e.g. -1.2e-3" aria-describedby="vh-hint vh-error" aria-invalid="false" required />
+            </div>
+            <p class="hint" id="vh-hint">Can be negative or positive.</p>
+            <p class="field-error" id="vh-error" role="alert"></p>
+          </div>
+
+          <div class="field">
+            <label for="current">
+              Current <span class="symbol">(I)</span>
+              <span class="unit">· amperes (A)</span>
+            </label>
+            <div class="input-wrap">
+              <input type="text" id="current" name="current" inputmode="decimal" placeholder="e.g. 2.0e-3" aria-describedby="current-hint current-error" aria-invalid="false" required />
+            </div>
+            <p class="hint" id="current-hint">Must be strictly greater than zero.</p>
+            <p class="field-error" id="current-error" role="alert"></p>
+          </div>
+
+          <div class="field">
+            <label for="bfield">
+              Magnetic Field <span class="symbol">(B)</span>
+              <span class="unit">· tesla (T)</span>
+            </label>
+            <div class="input-wrap">
+              <input type="text" id="bfield" name="bfield" inputmode="decimal" placeholder="e.g. 0.5" aria-describedby="b-hint b-error" aria-invalid="false" required />
+            </div>
+            <p class="hint" id="b-hint">Must be strictly greater than zero.</p>
+            <p class="field-error" id="b-error" role="alert"></p>
+          </div>
+
+          <div class="field">
+            <label for="thickness">
+              Thickness <span class="symbol">(w)</span>
+              <span class="unit">· meters (m)</span>
+            </label>
+            <div class="input-wrap">
+              <input type="text" id="thickness" name="thickness" inputmode="decimal" placeholder="e.g. 1.0e-4" aria-describedby="w-hint w-error" aria-invalid="false" required />
+            </div>
+            <p class="hint" id="w-hint">Must be strictly greater than zero.</p>
+            <p class="field-error" id="w-error" role="alert"></p>
+          </div>
+
+        </div>
+
+        <div class="submit-row">
+          <button type="submit" class="btn-primary" id="submit-btn">Calculate &amp; Classify</button>
+        </div>
+
+        <div class="alert alert-error" id="global-error" role="alert" aria-live="assertive">
+          <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span id="global-error-text"></span>
+        </div>
+      </form>
+    </section>
+
+    <!-- ============ OUTPUT SECTION ============ -->
+    <section class="card" aria-labelledby="output-title" aria-live="polite">
+      <h2 class="card-title" id="output-title">Classification Result</h2>
+      <p class="card-desc">Results update after you press <strong>Calculate &amp; Classify</strong>.</p>
+
+      <div id="output-empty" class="output-empty">
+        No results yet. Enter your readings above and press the button to begin.
+      </div>
+
+      <div id="output" class="output" role="region" aria-label="Calculation results">
+        <div class="result-header">
+          <span class="result-label">Material Type</span>
+          <span id="classification" class="classification">—</span>
+        </div>
+
+        <div class="result-grid">
+          <div class="result-tile">
+            <div class="tile-symbol">R<sub>H</sub></div>
+            <div class="tile-name">Hall Coefficient</div>
+            <div class="tile-value" id="rh-value">—</div>
+            <div class="tile-unit">m³ / C</div>
+          </div>
+
+          <div class="result-tile">
+            <div class="tile-symbol">n</div>
+            <div class="tile-name">Carrier Concentration</div>
+            <div class="tile-value" id="n-value">—</div>
+            <div class="tile-unit">carriers / m³</div>
+          </div>
+        </div>
+
+        <p class="explanation" id="explanation"></p>
+      </div>
+    </section>
+
+    <!-- ============ THEORY SECTION ============ -->
+    <details class="theory">
+      <summary>How it works: Hall Effect theory &amp; formulas</summary>
+      <div class="theory-body">
+
+        <h3>The Hall Effect</h3>
+        <p>
+          When a current <code>I</code> flows through a conductor or semiconductor placed in a perpendicular magnetic field <code>B</code>,
+          the Lorentz force deflects the charge carriers toward one side of the sample. This charge separation builds up a transverse
+          electric field, which produces a measurable voltage <code>V<sub>H</sub></code> across the sample, known as the Hall voltage.
+        </p>
+
+        <h3>Step 1: Hall Coefficient</h3>
+        <div class="formula">R<sub>H</sub> = (V<sub>H</sub> · w) / (I · B)</div>
+        <p>
+          The Hall coefficient <code>R<sub>H</sub></code> characterizes the sign and density of the charge carriers. Here <code>w</code> is the
+          sample thickness in the direction of the magnetic field, <code>I</code> is the applied current, and <code>B</code> is the magnetic flux density.
+        </p>
+
+        <h3>Step 2: Carrier Concentration</h3>
+        <div class="formula">n = 1 / (|R<sub>H</sub>| · e)</div>
+        <p>
+          For a single dominant carrier type, the carrier concentration <code>n</code> is inversely proportional to <code>|R<sub>H</sub>|</code>.
+          The elementary charge used is <code>e = 1.602 × 10<sup>−19</sup> C</code>.
+        </p>
+
+        <h3>Step 3: Classification (Sign of R<sub>H</sub>)</h3>
+        <ul>
+          <li><strong>R<sub>H</sub> &lt; 0</strong>: N-type semiconductor. Majority carriers are electrons.</li>
+          <li><strong>R<sub>H</sub> &gt; 0</strong>: P-type semiconductor. Majority carriers are holes.</li>
+          <li><strong>R<sub>H</sub> = 0</strong>: Intrinsic or undetermined. No net Hall response was measured.</li>
+        </ul>
+
+        <h3>Constants &amp; Assumptions</h3>
+        <table class="const-table">
+          <thead>
+            <tr><th>Symbol</th><th>Quantity</th><th>Value / Unit</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">e</td><td>Elementary charge</td><td class="mono">1.602 × 10⁻¹⁹ C</td></tr>
+          </tbody>
+        </table>
+        <p>
+          This model assumes a single dominant carrier type and a sign convention in which the Hall voltage is measured consistently
+          with the current direction. Real samples with both carrier types present may give misleading results.
+        </p>
+
+      </div>
+    </details>
+
+    <footer>
+      Hall Effect Material Classifier · Educational use for engineering physics labs
+    </footer>
+
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      // ---------- Constants ----------
+      const E_CHARGE = 1.602e-19; // Elementary charge (C)
+
+      // Accepts: 1.5, -2, .5, 5., 1.5e-3, -2.4E+2  (rejects: 1,5  e5  --1  NaN  Infinity  1e)
+      const NUMBER_PATTERN = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/;
+
+      // ---------- DOM references ----------
+      const form = document.getElementById("hall-form");
+      const submitBtn = document.getElementById("submit-btn");
+      const globalError = document.getElementById("global-error");
+      const globalErrorText = document.getElementById("global-error-text");
+      const outputEmpty = document.getElementById("output-empty");
+      const output = document.getElementById("output");
+      const classificationEl = document.getElementById("classification");
+      const rhEl = document.getElementById("rh-value");
+      const nEl = document.getElementById("n-value");
+      const explanationEl = document.getElementById("explanation");
+
+      const fields = {
+        vh: {
+          input: document.getElementById("vh"),
+          error: document.getElementById("vh-error"),
+          label: "Hall Voltage (V_H)",
+          positiveRequired: false
+        },
+        current: {
+          input: document.getElementById("current"),
+          error: document.getElementById("current-error"),
+          label: "Current (I)",
+          positiveRequired: true
+        },
+        bfield: {
+          input: document.getElementById("bfield"),
+          error: document.getElementById("b-error"),
+          label: "Magnetic Field (B)",
+          positiveRequired: true
+        },
+        thickness: {
+          input: document.getElementById("thickness"),
+          error: document.getElementById("w-error"),
+          label: "Thickness (w)",
+          positiveRequired: true
+        }
+      };
+
+      // ---------- UI helpers ----------
+      function setFieldError(key, message) {
+        const f = fields[key];
+        f.input.setAttribute("aria-invalid", message ? "true" : "false");
+        f.error.textContent = message || "";
+        f.error.classList.toggle("visible", Boolean(message));
+      }
+
+      function clearAllErrors() {
+        Object.keys(fields).forEach((key) => setFieldError(key, ""));
+        globalError.classList.remove("visible");
+        globalErrorText.textContent = "";
+      }
+
+      function showGlobalError(message) {
+        globalErrorText.textContent = message;
+        globalError.classList.add("visible");
+      }
+
+      function hideOutput() {
+        output.classList.remove("visible");
+        outputEmpty.style.display = "block";
+      }
+
+      function showOutput() {
+        outputEmpty.style.display = "none";
+        output.classList.add("visible");
+      }
+
+      /**
+       * Formats a number to exactly 3 significant figures in scientific notation.
+       * Returns a DocumentFragment with mantissa, "×10", and a superscript exponent,
+       * built with DOM nodes (no innerHTML) to keep output safe.
+       */
+      function formatScientific(value) {
+        const fragment = document.createDocumentFragment();
+
+        if (value === 0) {
+          fragment.appendChild(document.createTextNode("0"));
+          return fragment;
+        }
+
+        // toExponential(2) yields 3 significant figures, e.g. "-2.34e+22"
+        const [mantissa, exponentRaw] = value.toExponential(2).split("e");
+        const exponent = parseInt(exponentRaw, 10);
+
+        fragment.appendChild(document.createTextNode(`${mantissa} × 10`));
+        const sup = document.createElement("sup");
+        sup.textContent = String(exponent);
+        fragment.appendChild(sup);
+        return fragment;
+      }
+
+      function setScientificValue(element, value) {
+        element.replaceChildren(formatScientific(value));
+      }
+
+      // ---------- Validation ----------
+      /**
+       * Validates one field. Returns { ok, value, message }.
+       */
+      function readField(key) {
+        const f = fields[key];
+        const raw = f.input.value.trim();
+
+        if (raw === "") {
+          return { ok: false, message: `${f.label} is required.` };
+        }
+
+        if (!NUMBER_PATTERN.test(raw)) {
+          return {
+            ok: false,
+            message: "Enter a valid number (e.g. 1.5, -2.4, or 1.5e-3)."
+          };
+        }
+
+        const value = Number(raw);
+
+        if (!Number.isFinite(value)) {
+          return { ok: false, message: "Value is out of the supported numeric range." };
+        }
+
+        return { ok: true, value };
+      }
+
+      function validateAll() {
+        const results = {};
+        let hasError = false;
+
+        // Read and validate each field's format first
+        Object.keys(fields).forEach((key) => {
+          const result = readField(key);
+          results[key] = result;
+
+          if (!result.ok) {
+            setFieldError(key, result.message);
+            hasError = true;
+          } else {
+            setFieldError(key, "");
+          }
+        });
+
+        if (hasError) {
+          return { valid: false, values: null };
+        }
+
+        const { vh, current, bfield, thickness } = {
+          vh: results.vh.value,
+          current: results.current.value,
+          bfield: results.bfield.value,
+          thickness: results.thickness.value
+        };
+
+        // Strict positivity constraints
+        // Division-by-zero guard: I and B must be > 0
+        if (current <= 0 || bfield <= 0) {
+          if (current <= 0) {
+            setFieldError("current", "Current must be greater than zero.");
+          }
+          if (bfield <= 0) {
+            setFieldError("bfield", "Magnetic field must be greater than zero.");
+          }
+          showGlobalError("Current and Magnetic Field must be greater than zero.");
+          return { valid: false, values: null };
+        }
+
+        if (thickness <= 0) {
+          setFieldError("thickness", "Thickness must be greater than zero.");
+          return { valid: false, values: null };
+        }
+
+        return { valid: true, values: { vh, current, bfield, thickness } };
+      }
+
+      // ---------- Physics ----------
+      function computeHallCoefficient({ vh, thickness, current, bfield }) {
+        return (vh * thickness) / (current * bfield);
+      }
+
+      function computeCarrierConcentration(rh) {
+        if (rh === 0) {
+          return Infinity; // 1 / (0 · e) is undefined; handled explicitly in the UI
+        }
+        return 1 / (Math.abs(rh) * E_CHARGE);
+      }
+
+      function classify(rh) {
+        if (rh < 0) {
+          return {
+            key: "n-type",
+            label: "N-Type Semiconductor",
+            explanation: "R_H is negative, so the dominant charge carriers are electrons. The sample is an N-type semiconductor."
+          };
+        }
+        if (rh > 0) {
+          return {
+            key: "p-type",
+            label: "P-Type Semiconductor",
+            explanation: "R_H is positive, so the dominant charge carriers are holes. The sample is a P-type semiconductor."
+          };
+        }
+        return {
+          key: "intrinsic",
+          label: "Intrinsic / Undetermined",
+          explanation: "R_H equals zero, so no net Hall response was detected. The material is intrinsic or the result is undetermined. Carrier concentration cannot be calculated from this reading."
+        };
+      }
+
+      // ---------- Main handler ----------
+      function handleCalculate() {
+        clearAllErrors();
+
+        const { valid, values } = validateAll();
+        if (!valid) {
+          hideOutput();
+          // Move focus to the first invalid field for accessibility
+          const firstInvalid = Object.values(fields).find(
+            (f) => f.input.getAttribute("aria-invalid") === "true"
+          );
+          if (firstInvalid) firstInvalid.input.focus();
+          return;
+        }
+
+        const rh = computeHallCoefficient(values);
+
+        if (!Number.isFinite(rh)) {
+          showGlobalError("The result is too large or too small to represent. Please check your units.");
+          hideOutput();
+          return;
+        }
+
+        const n = computeCarrierConcentration(rh);
+        const classification = classify(rh);
+
+        if (rh !== 0 && !Number.isFinite(n)) {
+          showGlobalError("Carrier concentration overflowed. Please check your input magnitudes.");
+          hideOutput();
+          return;
+        }
+
+        // Render classification
+        classificationEl.textContent = classification.label;
+        classificationEl.className = `classification ${classification.key}`;
+
+        // Render R_H
+        setScientificValue(rhEl, rh);
+        rhEl.setAttribute("aria-label", `${rh} cubic metres per coulomb`);
+
+        // Render n (or undefined state for R_H = 0)
+        if (rh === 0) {
+          nEl.textContent = "Undefined";
+          nEl.removeAttribute("aria-label");
+          nEl.parentElement.querySelector(".tile-unit").textContent = "R_H = 0, so n cannot be computed";
+        } else {
+          setScientificValue(nEl, n);
+          nEl.parentElement.querySelector(".tile-unit").textContent = "carriers / m³";
+        }
+
+        explanationEl.textContent = classification.explanation;
+
+        showOutput();
+      }
+
+      // ---------- Events ----------
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        handleCalculate();
+      });
+
+      // Clear a field's error as the user corrects it
+      Object.keys(fields).forEach((key) => {
+        fields[key].input.addEventListener("input", () => {
+          if (fields[key].input.getAttribute("aria-invalid") === "true") {
+            setFieldError(key, "");
+          }
+          if (globalError.classList.contains("visible")) {
+            globalError.classList.remove("visible");
+          }
+        });
+      });
+
+      // Prevent accidental non-numeric characters from being typed (allow only valid number characters)
+      Object.keys(fields).forEach((key) => {
+        fields[key].input.addEventListener("keydown", (e) => {
+          const allowedControl = ["Backspace", "Delete", "Tab", "Enter", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"];
+          if (e.ctrlKey || e.metaKey || e.altKey) return;
+          if (allowedControl.includes(e.key)) return;
+          if (e.key.length !== 1) return;
+          if (!/[0-9.eE+\-]/.test(e.key)) {
+            e.preventDefault();
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
